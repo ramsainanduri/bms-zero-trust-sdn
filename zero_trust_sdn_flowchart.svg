@@ -1,0 +1,207 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1050" viewBox="0 0 1600 1050" role="img" aria-labelledby="title desc">
+  <title id="title">Zero Trust SDN Controller Flow for BMS Experiment</title>
+  <desc id="desc">Clean architecture flowchart showing Mininet hosts, Open vSwitch data plane, POX controller verification layer with AAA and Zero Trust, ABAC policy engine, flow enforcement, deny handling, quarantine and logs.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fbfdff"/>
+      <stop offset="1" stop-color="#eef5fb"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#235789"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#b42318"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#15803d"/>
+    </marker>
+    <style>
+      .title { font: 800 34px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 17px Arial, Helvetica, sans-serif; fill: #475569; }
+      .section { font: 800 22px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .label { font: 800 17px Arial, Helvetica, sans-serif; fill: #111827; }
+      .small { font: 500 13px Arial, Helvetica, sans-serif; fill: #334155; }
+      .tiny { font: 500 12px Arial, Helvetica, sans-serif; fill: #475569; }
+      .mono { font: 600 12px Consolas, Monaco, monospace; fill: #334155; }
+      .card { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 12; filter: url(#shadow); }
+      .panel { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; filter: url(#shadow); }
+      .blue { fill: #eff6ff; stroke: #bfdbfe; stroke-width: 1.5; rx: 10; }
+      .amber { fill: #fff7ed; stroke: #fed7aa; stroke-width: 1.5; rx: 10; }
+      .green { fill: #ecfdf5; stroke: #a7f3d0; stroke-width: 1.5; rx: 10; }
+      .redbox { fill: #fff1f2; stroke: #fecdd3; stroke-width: 1.5; rx: 10; }
+      .line { stroke: #235789; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .redline { stroke: #b42318; stroke-width: 3; fill: none; marker-end: url(#arrowRed); }
+      .greenline { stroke: #15803d; stroke-width: 3; fill: none; marker-end: url(#arrowGreen); }
+      .dash { stroke-dasharray: 7 6; }
+      .icon { stroke: #0f172a; stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1050" fill="url(#bg)"/>
+  <text x="70" y="60" class="title">Zero Trust SDN Controller Flow for BMS</text>
+  <text x="70" y="92" class="subtitle">Controller order: AAA identity, Zero Trust risk, rate/quarantine checks, ABAC policy, OpenFlow enforcement</text>
+
+  <!-- Mininet hosts -->
+  <rect x="55" y="135" width="300" height="650" class="card"/>
+  <text x="88" y="175" class="section">Mininet Hosts</text>
+  <text x="88" y="198" class="small">Simulated BMS devices</text>
+
+  <g transform="translate(88,225)">
+    <rect width="230" height="72" class="blue"/>
+    <text x="18" y="28" class="label">h1 BMS Controller</text>
+    <text x="18" y="50" class="small">10.0.0.1 | HVAC | trusted</text>
+  </g>
+  <g transform="translate(88,315)">
+    <rect width="230" height="72" class="green"/>
+    <text x="18" y="28" class="label">h2 HVAC Sensor</text>
+    <text x="18" y="50" class="small">10.0.0.2 | trusted</text>
+  </g>
+  <g transform="translate(88,405)">
+    <rect width="230" height="72" class="amber"/>
+    <text x="18" y="28" class="label">h3 Lighting Ctrl</text>
+    <text x="18" y="50" class="small">10.0.0.3 | trusted</text>
+  </g>
+  <g transform="translate(88,495)">
+    <rect width="230" height="72" class="amber"/>
+    <text x="18" y="28" class="label">h4 Lighting Sensor</text>
+    <text x="18" y="50" class="small">10.0.0.4 | unknown trust</text>
+  </g>
+  <g transform="translate(88,585)">
+    <rect width="230" height="72" class="redbox"/>
+    <text x="18" y="28" class="label">h5 External Device</text>
+    <text x="18" y="50" class="small">10.0.0.5 | restricted</text>
+  </g>
+  <g transform="translate(88,695)">
+    <rect width="230" height="54" class="panel"/>
+    <text x="18" y="24" class="label">Test cases T01-T12</text>
+    <text x="18" y="43" class="small">ICMP ping traffic</text>
+  </g>
+
+  <!-- Data plane -->
+  <rect x="435" y="300" width="250" height="210" class="card"/>
+  <text x="484" y="340" class="section">Data Plane</text>
+  <text x="498" y="364" class="small">Open vSwitch s1</text>
+  <g transform="translate(500,395)">
+    <rect width="120" height="60" rx="8" fill="#e2e8f0" stroke="#64748b" stroke-width="2"/>
+    <rect x="16" y="15" width="88" height="9" rx="3" fill="#64748b"/>
+    <rect x="16" y="37" width="88" height="9" rx="3" fill="#64748b"/>
+  </g>
+  <text x="470" y="482" class="small">Policy Enforcement Point</text>
+
+  <!-- Controller -->
+  <rect x="775" y="135" width="500" height="650" class="card"/>
+  <text x="922" y="175" class="section">POX SDN Controller</text>
+  <text x="870" y="198" class="small">Security decision and OpenFlow rule installation</text>
+
+  <g transform="translate(815,225)">
+    <rect width="420" height="62" class="blue"/>
+    <text x="20" y="26" class="label">1. PacketIn Handler</text>
+    <text x="20" y="47" class="small">ARP handling, IPv4 parsing, MAC learning</text>
+  </g>
+
+  <g transform="translate(815,315)">
+    <rect width="420" height="158" class="panel"/>
+    <text x="20" y="32" class="section">2. Zero Trust Verification</text>
+    <text x="20" y="54" class="small">AAA first, then runtime risk scoring</text>
+    <g transform="translate(20,75)">
+      <rect width="180" height="62" class="blue"/>
+      <text x="15" y="25" class="label">AAA</text>
+      <text x="15" y="45" class="small">IP + MAC + session</text>
+    </g>
+    <g transform="translate(220,75)">
+      <rect width="180" height="62" class="amber"/>
+      <text x="15" y="25" class="label">Zero Trust</text>
+      <text x="15" y="45" class="small">risk score per flow</text>
+    </g>
+  </g>
+
+  <g transform="translate(815,505)">
+    <rect width="195" height="70" class="green"/>
+    <text x="18" y="28" class="label">4. Rate Limit</text>
+    <text x="18" y="50" class="small">drop if &gt;20 / 5s</text>
+  </g>
+  <g transform="translate(1040,505)">
+    <rect width="195" height="70" class="redbox"/>
+    <text x="18" y="28" class="label">5. Quarantine</text>
+    <text x="18" y="50" class="small">drop isolated hosts</text>
+  </g>
+
+  <g transform="translate(815,610)">
+    <rect width="420" height="70" class="green"/>
+    <text x="20" y="28" class="label">6. ABAC Policy Engine</text>
+    <text x="20" y="50" class="small">role, device type, system, trust level, context</text>
+  </g>
+
+  <g transform="translate(815,710)">
+    <rect width="420" height="50" class="blue"/>
+    <text x="20" y="30" class="label">7. Install OpenFlow allow/drop rule</text>
+  </g>
+
+  <!-- Decisions -->
+  <rect x="1330" y="170" width="220" height="565" class="card"/>
+  <text x="1372" y="210" class="section">Decision Paths</text>
+
+  <g transform="translate(1360,245)">
+    <rect width="160" height="66" class="green"/>
+    <text x="22" y="27" class="label">ALLOW</text>
+    <text x="22" y="48" class="small">forward flow</text>
+  </g>
+  <g transform="translate(1360,340)">
+    <rect width="160" height="66" class="redbox"/>
+    <text x="22" y="27" class="label">DENY</text>
+    <text x="22" y="48" class="small">drop rule</text>
+  </g>
+  <g transform="translate(1360,435)">
+    <rect width="160" height="84" class="amber"/>
+    <text x="22" y="27" class="label">QUARANTINE</text>
+    <text x="22" y="49" class="small">after 3 denials</text>
+    <text x="22" y="68" class="small">or 2 destinations</text>
+  </g>
+  <g transform="translate(1360,550)">
+    <rect width="160" height="95" class="blue"/>
+    <text x="22" y="27" class="label">LOGS</text>
+    <text x="22" y="49" class="mono">AUTH_OK</text>
+    <text x="22" y="68" class="mono">ZT ASSESS</text>
+    <text x="22" y="87" class="mono">ALLOW/DENY</text>
+  </g>
+
+  <!-- Arrows -->
+  <path d="M355 425 H435" class="line"/>
+  <text x="372" y="405" class="small">test traffic</text>
+
+  <path d="M685 360 C720 300 735 255 775 255" class="line"/>
+  <text x="700" y="302" class="small">PacketIn</text>
+
+  <path d="M1025 287 V315" class="line"/>
+  <path d="M1025 473 V505" class="line"/>
+  <path d="M1010 540 H1040" class="line"/>
+  <path d="M1025 575 V610" class="line"/>
+  <path d="M1025 680 V710" class="line"/>
+
+  <path d="M1235 735 C1270 735 1288 278 1330 278" class="greenline"/>
+  <path d="M1235 735 C1270 735 1288 372 1330 372" class="redline"/>
+  <path d="M1138 575 C1245 575 1280 477 1330 477" class="redline dash"/>
+  <path d="M1235 390 C1270 430 1290 474 1330 477" class="redline dash"/>
+
+  <path d="M815 735 C740 720 715 520 685 470" class="line"/>
+  <text x="690" y="705" class="small">OpenFlow rule</text>
+
+  <!-- Evidence -->
+  <rect x="55" y="850" width="1495" height="125" rx="16" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="85" y="890" class="section">When decisions happen</text>
+  <text x="85" y="920" class="small">AAA failure, Zero Trust high risk, rate limit, quarantine, or ABAC denial all install drop rules.</text>
+  <text x="85" y="947" class="small">Quarantine is applied only after repeated denied behaviour: 3 denials or denials to 2 different destinations.</text>
+  <rect x="780" y="878" width="205" height="64" class="blue"/>
+  <text x="800" y="903" class="mono">ZERO TRUST ASSESS</text>
+  <text x="800" y="925" class="mono">score + decision</text>
+  <rect x="1015" y="878" width="205" height="64" class="redbox"/>
+  <text x="1035" y="903" class="mono">ZERO TRUST DENY</text>
+  <text x="1035" y="925" class="mono">risk &gt;= 70</text>
+  <rect x="1250" y="878" width="235" height="64" class="amber"/>
+  <text x="1270" y="903" class="mono">QUARANTINE APPLIED</text>
+  <text x="1270" y="925" class="mono">session revoked</text>
+</svg>

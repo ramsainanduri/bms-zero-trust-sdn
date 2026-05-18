@@ -1,0 +1,100 @@
+sh echo "BMS Zero Trust SDN baseline tests"
+sh echo "Controller evidence: /tmp/bms_controller_events.txt"
+
+sh ovs-ofctl del-flows s1
+
+sh echo "T01: h2 -> h1 | expected ALLOW"
+h2 ping -c 2 10.0.0.1
+sh ovs-ofctl del-flows s1
+
+sh echo "T02: h1 -> h2 | expected ALLOW"
+h1 ping -c 2 10.0.0.2
+sh ovs-ofctl del-flows s1
+
+sh echo "T03: h2 -> h3 | expected DENY cross-system"
+h2 ping -c 2 10.0.0.3
+sh ovs-ofctl del-flows s1
+
+sh echo "T04: h2 -> h4 | expected DENY sensor-to-sensor"
+h2 ping -c 2 10.0.0.4
+sh ovs-ofctl del-flows s1
+
+sh echo "T05: h3 -> h1 | expected DENY cross-system"
+h3 ping -c 2 10.0.0.1
+sh ovs-ofctl del-flows s1
+
+sh echo "T06: h1 -> h3 | expected ALLOW bms_controller exemption"
+h1 ping -c 2 10.0.0.3
+sh ovs-ofctl del-flows s1
+
+sh echo "T07: h4 -> h3 | expected DENY unknown-trust source"
+h4 ping -c 2 10.0.0.3
+sh ovs-ofctl del-flows s1
+
+sh echo "T08: h5 -> h1 | expected DENY abnormal external device"
+h5 ping -c 2 10.0.0.1
+sh ovs-ofctl del-flows s1
+
+sh echo "T09: h2 -> h5 | expected DENY restricted destination"
+h2 ping -c 2 10.0.0.5
+sh ovs-ofctl del-flows s1
+
+sh echo "T10: repeated h4 denials | expected QUARANTINE"
+h4 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h4 ping -c 1 10.0.0.2
+sh ovs-ofctl del-flows s1
+h4 ping -c 1 10.0.0.3
+sh ovs-ofctl del-flows s1
+
+sh echo "T11: h4 -> h3 after quarantine | expected DENY"
+h4 ping -c 2 10.0.0.3
+sh ovs-ofctl del-flows s1
+
+sh echo "T12: rapid h2 requests | expected RATE_LIMIT_DENY if threshold is reached"
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+
+sh echo "Baseline tests complete. Review /tmp/bms_controller_events.txt for controller decisions."

@@ -1,0 +1,29 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# BACnet dataset analysis outputs are thesis-side evidence, not part of the
+# public code artifact.
+data_analysis/
+
+# Large packet captures should stay outside the Git repository.
+*.pcap
+*.pcapng
+
+# Runtime logs and local evidence files.
+*.log
+*.pid
+bms_controller_events.txt
+
+# Build outputs and local helper binaries.
+*.o
+*.so
+*.dylib
+*.exe
+
+# Editor and OS files.
+.DS_Store
+.vscode/
+.idea/

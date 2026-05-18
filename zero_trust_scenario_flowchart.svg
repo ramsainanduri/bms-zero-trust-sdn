@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Scenario-Based Zero Trust SDN Access Control for BMS</title>
+  <desc id="desc">Readable scenario architecture showing devices, access filtering, OVS data plane, POX controller with AAA and Zero Trust, ABAC, BMS resources, logs and quarantine.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fbfdff"/>
+      <stop offset="1" stop-color="#eef5fb"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#235789"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#b42318"/>
+    </marker>
+    <style>
+      .title { font: 800 34px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 17px Arial, Helvetica, sans-serif; fill: #475569; }
+      .section { font: 800 23px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .label { font: 800 17px Arial, Helvetica, sans-serif; fill: #111827; }
+      .small { font: 500 13px Arial, Helvetica, sans-serif; fill: #334155; }
+      .mono { font: 600 12px Consolas, Monaco, monospace; fill: #334155; }
+      .card { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; filter: url(#shadow); }
+      .blue { fill: #eff6ff; stroke: #bfdbfe; stroke-width: 1.5; rx: 10; }
+      .green { fill: #ecfdf5; stroke: #a7f3d0; stroke-width: 1.5; rx: 10; }
+      .amber { fill: #fff7ed; stroke: #fed7aa; stroke-width: 1.5; rx: 10; }
+      .redbox { fill: #fff1f2; stroke: #fecdd3; stroke-width: 1.5; rx: 10; }
+      .line { stroke: #235789; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .redline { stroke: #b42318; stroke-width: 3; fill: none; marker-end: url(#arrowRed); }
+      .dash { stroke-dasharray: 7 6; }
+      .icon { stroke: #0f172a; stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <text x="70" y="60" class="title">Scenario-Based Zero Trust SDN Access Control</text>
+  <text x="70" y="92" class="subtitle">A cleaner scenario view of devices, authentication, Zero Trust risk, ABAC policy, SDN enforcement, and BMS destinations</text>
+
+  <!-- Column headers -->
+  <text x="115" y="145" class="section">Access Sources</text>
+  <text x="510" y="145" class="section">SDN Data Plane</text>
+  <text x="820" y="145" class="section">Control and Policy</text>
+  <text x="1270" y="145" class="section">BMS Resources</text>
+
+  <!-- Left column -->
+  <rect x="70" y="175" width="300" height="160" class="card"/>
+  <circle cx="125" cy="235" r="30" fill="#111827"/>
+  <path d="M92 305 v-24 c0-28 66-28 66 0 v24 z" fill="#111827"/>
+  <path d="M190 223 l36 14 v31 c0 34-36 46-36 46 s-36-12-36-46 v-31 z" fill="#f97316"/>
+  <path d="M172 266 l15 15 l30-39" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="235" y="230" class="label">Users</text>
+  <text x="235" y="253" class="small">and devices</text>
+  <text x="235" y="276" class="small">send requests</text>
+
+  <rect x="70" y="385" width="300" height="135" class="card"/>
+  <circle cx="130" cy="452" r="36" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+  <rect x="112" y="454" width="36" height="30" rx="5" fill="#fff" stroke="#1d4ed8" stroke-width="3"/>
+  <path d="M120 454 v-14 c0-17 20-17 20 0 v14" class="icon" stroke="#1d4ed8" stroke-width="3"/>
+  <text x="195" y="440" class="label">VPN / Access</text>
+  <text x="195" y="464" class="small">entry channel</text>
+
+  <rect x="70" y="570" width="300" height="135" class="card"/>
+  <rect x="105" y="610" width="105" height="62" fill="#e66a2c"/>
+  <path d="M105 630 h105 M105 650 h105 M130 610 v20 M170 610 v20 M150 630 v20 M190 630 v20 M130 650 v22 M170 650 v22" stroke="#fff3e8" stroke-width="2"/>
+  <path d="M228 600 c22 24-9 40 12 62 c-34-8-44-35-12-62z" fill="#f97316"/>
+  <text x="105" y="745" class="label">Firewall</text>
+  <text x="105" y="770" class="small">perimeter filtering</text>
+
+  <!-- Data plane column -->
+  <rect x="455" y="335" width="270" height="230" class="card"/>
+  <text x="515" y="375" class="section">Open vSwitch</text>
+  <text x="542" y="400" class="small">switch s1</text>
+  <rect x="525" y="430" width="130" height="70" rx="9" fill="#e2e8f0" stroke="#64748b" stroke-width="2"/>
+  <rect x="544" y="448" width="92" height="10" rx="3" fill="#64748b"/>
+  <rect x="544" y="473" width="92" height="10" rx="3" fill="#64748b"/>
+  <text x="502" y="535" class="small">enforces allow/drop rules</text>
+
+  <!-- Controller column -->
+  <rect x="790" y="175" width="360" height="640" class="card"/>
+  <text x="880" y="215" class="section">POX Controller</text>
+  <text x="843" y="240" class="small">central decision point</text>
+
+  <g transform="translate(830,275)">
+    <rect width="280" height="70" class="blue"/>
+    <text x="18" y="28" class="label">AAA</text>
+    <text x="18" y="50" class="small">IP + MAC authentication, sessions</text>
+  </g>
+  <g transform="translate(830,365)">
+    <rect width="280" height="86" class="amber"/>
+    <text x="18" y="28" class="label">Zero Trust Risk</text>
+    <text x="18" y="50" class="small">trust, context, denials, rate</text>
+    <text x="18" y="69" class="small">allow / monitor / deny</text>
+  </g>
+  <g transform="translate(830,475)">
+    <rect width="280" height="82" class="green"/>
+    <text x="18" y="28" class="label">ABAC Policy</text>
+    <text x="18" y="50" class="small">role, type, system, trust</text>
+    <text x="18" y="69" class="small">context-aware permit/deny</text>
+  </g>
+  <g transform="translate(830,580)">
+    <rect width="280" height="76" class="blue"/>
+    <text x="18" y="28" class="label">Flow Enforcement</text>
+    <text x="18" y="50" class="small">install OpenFlow rules</text>
+  </g>
+  <g transform="translate(830,680)">
+    <rect width="280" height="86" class="redbox"/>
+    <text x="18" y="28" class="label">Detection Response</text>
+    <text x="18" y="50" class="small">quarantine after repeated denials</text>
+    <text x="18" y="69" class="small">revoke AAA session</text>
+  </g>
+
+  <!-- BMS resources -->
+  <rect x="1230" y="190" width="285" height="100" class="card"/>
+  <circle cx="1275" cy="240" r="30" fill="#dcfce7"/>
+  <path d="M1260 240 h30 M1275 225 v30 M1265 228 l20 24" class="icon" stroke-width="3"/>
+  <text x="1320" y="232" class="label">HVAC System</text>
+  <text x="1320" y="255" class="small">h1 controller, h2 sensor</text>
+
+  <rect x="1230" y="340" width="285" height="100" class="card"/>
+  <circle cx="1275" cy="390" r="30" fill="#ffedd5"/>
+  <path d="M1263 398 c-7-13 0-31 12-31 c12 0 18 18 10 31 M1263 410 h24 M1268 419 h14" class="icon" stroke-width="3"/>
+  <text x="1320" y="382" class="label">Lighting System</text>
+  <text x="1320" y="405" class="small">h3 controller, h4 sensor</text>
+
+  <rect x="1230" y="490" width="285" height="100" class="card"/>
+  <circle cx="1275" cy="540" r="30" fill="#fee2e2"/>
+  <path d="M1258 557 v-15 c0-22 34-22 34 0 v15 M1254 557 h42" class="icon" stroke="#b91c1c" stroke-width="3"/>
+  <text x="1320" y="532" class="label">External Device</text>
+  <text x="1320" y="555" class="small">h5 restricted/abnormal</text>
+
+  <rect x="1230" y="660" width="285" height="140" class="card"/>
+  <text x="1262" y="700" class="section">Evidence</text>
+  <text x="1262" y="730" class="mono">ZERO TRUST ASSESS</text>
+  <text x="1262" y="752" class="mono">ALLOW / DENY</text>
+  <text x="1262" y="774" class="mono">QUARANTINE APPLIED</text>
+
+  <!-- Straight connections -->
+  <path d="M370 250 H455" class="line"/>
+  <path d="M370 452 H455" class="line"/>
+  <path d="M370 638 H455" class="line"/>
+  <path d="M725 450 H790" class="line"/>
+  <text x="738" y="430" class="small">PacketIn</text>
+  <path d="M1150 620 H1230" class="line"/>
+  <text x="1160" y="600" class="small">allow flow</text>
+  <path d="M1150 720 H1230" class="redline"/>
+  <text x="1160" y="700" class="small" fill="#b42318">deny/quarantine</text>
+
+  <path d="M590 565 V855 H970 V815" class="line"/>
+  <text x="630" y="835" class="small">OpenFlow allow/drop rule</text>
+
+  <path d="M970 345 V365" class="line"/>
+  <path d="M970 451 V475" class="line"/>
+  <path d="M970 557 V580" class="line"/>
+  <path d="M970 656 V680" class="redline dash"/>
+
+  <!-- Bottom note -->
+  <rect x="70" y="855" width="1445" height="85" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.8"/>
+  <text x="100" y="890" class="section">Scenario meaning</text>
+  <text x="100" y="918" class="small">Devices are never trusted only because they are inside the network. AAA verifies identity, Zero Trust scores runtime risk, ABAC checks policy, and OVS enforces the final flow rule.</text>
+</svg>

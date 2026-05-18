@@ -1,0 +1,59 @@
+sh echo "BMS Zero Trust SDN advanced validation"
+sh echo "Controller evidence: /tmp/bms_controller_events.txt"
+
+sh ovs-ofctl del-flows s1
+
+sh echo "A01: baseline allow plus OpenFlow table inspection"
+h2 ping -c 2 10.0.0.1
+sh ovs-ofctl dump-flows s1
+sh ovs-ofctl del-flows s1
+
+sh echo "A02: MAC spoofing | h2 uses wrong MAC | expected AAA_DENY"
+h2 ip link set h2-eth0 down
+h2 ip link set h2-eth0 address 00:00:00:00:00:99
+h2 ip link set h2-eth0 up
+h2 ping -c 2 10.0.0.1
+sh ovs-ofctl del-flows s1
+
+sh echo "A02 restore: h2 MAC back to registered value"
+h2 ip link set h2-eth0 down
+h2 ip link set h2-eth0 address 00:00:00:00:00:02
+h2 ip link set h2-eth0 up
+sh ovs-ofctl del-flows s1
+
+sh echo "A03: unknown source IP | h2 uses 10.0.0.99 | expected AAA_DENY"
+h2 ip addr flush dev h2-eth0
+h2 ip addr add 10.0.0.99/8 dev h2-eth0
+h2 ping -c 2 10.0.0.1
+sh ovs-ofctl del-flows s1
+
+sh echo "A03 restore: h2 IP back to registered value"
+h2 ip addr flush dev h2-eth0
+h2 ip addr add 10.0.0.2/8 dev h2-eth0
+sh ovs-ofctl del-flows s1
+
+sh echo "A04: BACnet-style UDP/47808 | h2 -> h1 | expected ALLOW if nc is available"
+h1 sh -c "command -v nc >/tmp/h1_nc_check"
+h1 sh -c "nc -h >/tmp/h1_nc_help 2>&1 || true"
+h1 sh -c "nc -u -l -p 47808 >/tmp/bacnet_udp_recv 2>/tmp/bacnet_udp_err &"
+h2 sh -c "printf 'bacnet-test' | nc -u -w1 10.0.0.1 47808 || true"
+sh sleep 1
+sh ovs-ofctl del-flows s1
+
+sh echo "A05: repeated h4 denials | expected quarantine"
+h4 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h4 ping -c 1 10.0.0.2
+sh ovs-ofctl del-flows s1
+h4 ping -c 1 10.0.0.3
+sh ovs-ofctl del-flows s1
+
+sh echo "A06: quarantine persistence | h4 -> h3 | expected blocked"
+h4 ping -c 2 10.0.0.3
+sh ovs-ofctl dump-flows s1
+sh ovs-ofctl del-flows s1
+
+sh echo "A07: recent controller log evidence"
+sh tail -n 120 /tmp/bms_controller_events.txt || true
+
+sh echo "Advanced validation complete."
