@@ -112,11 +112,15 @@ No, it is part of the dynamic behaviour. The important point is to explain that 
 
 ### 26. How is off-hours context calculated?
 
-The controller uses the local system time of the POX process through `datetime.datetime.now().hour`. If the current hour is outside the configured business hours, non-exempt roles can receive off-hours context.
+The controller uses a per-device schedule profile. HVAC devices in this testbed are treated as continuous operation, while lighting field devices use the business-hours schedule. For repeatable tests, `/tmp/bms_controller_hour` can force an hour such as `2` or `10`; otherwise the controller uses the POX process system time.
 
 ### 27. Is using system time a limitation?
 
 Yes. It is acceptable for a proof of concept, but production systems should use reliable time synchronisation, configured schedules, and possibly building operation calendars.
+
+### 27a. Why did you add delta-t timing checks?
+
+The BACnet analysis showed that attack traffic can remain protocol-valid while changing behaviour. Delta-t checks let the controller notice unusually short inter-arrival times between new flows from the same device. This is not a full anomaly detector, but it gives transparent timing evidence that can increase Zero Trust risk.
 
 ## Policy and Test Cases
 
@@ -180,7 +184,7 @@ Ping can generate traffic in both directions. Also, after flow rules are deleted
 
 ### 42. Are events grouped per test?
 
-When running known baseline pings, the controller can infer a test marker from the source and destination. However, the controller is fundamentally event-driven, so events are chronological. Running one test at a time makes the logs easier to interpret.
+The Mininet scripts print simple test labels before each command. The controller itself is event-driven, so its log remains chronological. Running one test at a time makes the controller events easier to interpret.
 
 ### 43. Why did you add `direction="h2 -> h1"`?
 

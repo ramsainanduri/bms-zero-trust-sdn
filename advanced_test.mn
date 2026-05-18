@@ -40,7 +40,30 @@ h2 sh -c "printf 'bacnet-test' | nc -u -w1 10.0.0.1 47808 || true"
 sh sleep 1
 sh ovs-ofctl del-flows s1
 
-sh echo "A05: repeated h4 denials | expected quarantine"
+sh echo "A05: short delta-t sequence | expected TIMING_DELTA evidence"
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+h2 ping -c 1 10.0.0.1
+sh ovs-ofctl del-flows s1
+
+sh echo "A06: forced business hour | h3 -> h4 UDP/47808 | expected ALLOW"
+sh sh -c "echo 10 >/tmp/bms_controller_hour"
+h3 sh -c "printf 'lighting-business-hours' | nc -u -w1 10.0.0.4 47808 || true"
+sh ovs-ofctl del-flows s1
+
+sh echo "A07: forced off-hours | h3 -> h4 UDP/47808 | expected ABAC_DENY"
+sh sh -c "echo 2 >/tmp/bms_controller_hour"
+h3 sh -c "printf 'lighting-off-hours' | nc -u -w1 10.0.0.4 47808 || true"
+sh ovs-ofctl del-flows s1
+
+sh echo "A08: forced off-hours | h2 -> h1 | expected ALLOW for continuous HVAC"
+h2 ping -c 2 10.0.0.1
+sh ovs-ofctl del-flows s1
+sh rm -f /tmp/bms_controller_hour
+
+sh echo "A09: repeated h4 denials | expected quarantine"
 h4 ping -c 1 10.0.0.1
 sh ovs-ofctl del-flows s1
 h4 ping -c 1 10.0.0.2
@@ -48,12 +71,12 @@ sh ovs-ofctl del-flows s1
 h4 ping -c 1 10.0.0.3
 sh ovs-ofctl del-flows s1
 
-sh echo "A06: quarantine persistence | h4 -> h3 | expected blocked"
+sh echo "A10: quarantine persistence | h4 -> h3 | expected blocked"
 h4 ping -c 2 10.0.0.3
 sh ovs-ofctl dump-flows s1
 sh ovs-ofctl del-flows s1
 
-sh echo "A07: recent controller log evidence"
+sh echo "A11: recent controller log evidence"
 sh tail -n 120 /tmp/bms_controller_events.txt || true
 
 sh echo "Advanced validation complete."

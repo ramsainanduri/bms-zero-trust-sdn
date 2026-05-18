@@ -51,9 +51,13 @@ source advanced_test.mn
 | A02 | Verify MAC spoofing is blocked by AAA |
 | A03 | Verify unknown source IP is blocked by AAA |
 | A04 | Validate BACnet-representative UDP port `47808` path |
-| A05 | Trigger quarantine through repeated denied behaviour |
-| A06 | Confirm quarantine persists |
-| A07 | Print a compact evidence summary from the controller log |
+| A05 | Generate rapid repeated flows to show `TIMING_DELTA` evidence |
+| A06 | Force business-hour context for lighting controller traffic |
+| A07 | Force off-hours context and deny scheduled lighting traffic |
+| A08 | Show continuous HVAC traffic remains allowed during forced off-hours |
+| A09 | Trigger quarantine through repeated denied behaviour |
+| A10 | Confirm quarantine persists |
+| A11 | Print a compact evidence summary from the controller log |
 
 ## Important Events
 
@@ -62,6 +66,8 @@ source advanced_test.mn
 | `EVENT=AAA_AUTH_OK` | Source identity/session accepted |
 | `EVENT=AAA_AUTH_FAIL` | Source identity failed |
 | `EVENT=ZT_ASSESS` | Runtime risk score calculated |
+| `EVENT=TIMING_DELTA` | A new flow arrived from the same source sooner than the expected delta-t threshold |
+| `EVENT=OFF_HOURS_CONTEXT` | A device with a restricted schedule was evaluated outside business hours |
 | `EVENT=ALLOW` | Flow allowed and OpenFlow rule installed |
 | `EVENT=ABAC_DENY` | Least-privilege policy denied the flow |
 | `EVENT=ZT_DENY` | Risk score denied the flow before ABAC |
@@ -81,3 +87,5 @@ sh ovs-ofctl del-flows s1
 ```
 
 For a fully clean run, exit Mininet, restart POX, and start `bash mininet.sh` again.
+
+The advanced off-hours tests use `/tmp/bms_controller_hour` to force the controller's hour without changing the system clock. The script removes this file after the off-hours checks.

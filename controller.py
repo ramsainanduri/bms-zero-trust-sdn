@@ -19,6 +19,7 @@ HOST_LABELS = {
     "10.0.0.4": "h4",
     "10.0.0.5": "h5",
 }
+FORCED_HOUR_PATH = "/tmp/bms_controller_hour"
 
 # ---------------------------------------------------------------------------
 # ZERO TRUST IDENTITY LAYER: AAA SERVICE
@@ -267,6 +268,7 @@ host_attributes = {
         "system": "hvac",
         "trust": "trusted",
         "context": "normal",
+        "schedule": "always",
     },
     "10.0.0.2": {
         "role": "sensor",
@@ -274,6 +276,7 @@ host_attributes = {
         "system": "hvac",
         "trust": "trusted",
         "context": "normal",
+        "schedule": "always",
     },
     "10.0.0.3": {
         "role": "lighting_controller",
@@ -281,6 +284,7 @@ host_attributes = {
         "system": "lighting",
         "trust": "trusted",
         "context": "normal",
+        "schedule": "business_hours",
     },
     "10.0.0.4": {
         "role": "sensor",
@@ -288,6 +292,7 @@ host_attributes = {
         "system": "lighting",
         "trust": "unknown",
         "context": "normal",
+        "schedule": "business_hours",
     },
     "10.0.0.5": {
         "role": "external",
@@ -295,23 +300,27 @@ host_attributes = {
         "system": "unknown",
         "trust": "restricted",
         "context": "abnormal",
+        "schedule": "maintenance_window",
     },
 }
 
 # ---------------------------------------------------------------------------
 # BUSINESS HOURS
-# Off-hours restriction applies only to sensors and unknown devices.
-# Controllers are always exempt.
+# Off-hours context is controlled per device. HVAC devices are treated as
+# continuous operation; lighting field devices are expected during business
+# hours in this simplified testbed.
 # ---------------------------------------------------------------------------
 BUSINESS_HOURS_START = 8
 BUSINESS_HOURS_END = 18
-OFF_HOURS_EXEMPT_ROLES = {"bms_controller", "lighting_controller"}
+OFF_HOURS_RESTRICTED_SCHEDULES = {"business_hours", "maintenance_window"}
 
 # ---------------------------------------------------------------------------
 # RATE LIMITING
 # ---------------------------------------------------------------------------
 RATE_LIMIT_PACKETS = 20
 RATE_LIMIT_WINDOW = 5
+TIMING_DELTA_MIN_SECONDS = 0.25
+TIMING_DELTA_RISK_THRESHOLD = 2
 
 # ---------------------------------------------------------------------------
 # BEHAVIORAL TRACKING
@@ -322,6 +331,8 @@ deny_threshold = 3
 multi_destination_threshold = 2
 quarantined_hosts = set()
 rate_counter = defaultdict(list)
+last_packet_time = {}
+timing_delta_counter = defaultdict(int)
 
 # ---------------------------------------------------------------------------
 # EVALUATION METRICS
@@ -443,6 +454,42 @@ def check_rate_limit(src_ip):
     return True, "rate within limit"
 
 
+def get_current_hour():
+    try:
+        with open(FORCED_HOUR_PATH, "r") as hour_file:
+            value = hour_file.read().strip()
+        if value:
+            return int(value) % 24, "forced"
+    except (OSError, ValueError):
+        pass
+    return datetime.datetime.now().hour, "system"
+
+
+def observe_timing_delta(src_ip, dst_ip):
+    now = time.time()
+    previous = last_packet_time.get(src_ip)
+    last_packet_time[src_ip] = now
+    if previous is None:
+        return None
+
+    delta = now - previous
+    if delta < TIMING_DELTA_MIN_SECONDS:
+        timing_delta_counter[src_ip] += 1
+        log_event(
+            "TIMING_DELTA",
+            level="warning",
+            src=src_ip,
+            dst=dst_ip,
+            count=timing_delta_counter[src_ip],
+            delta_ms=_latency_ms(delta),
+            threshold_ms=_latency_ms(TIMING_DELTA_MIN_SECONDS),
+            reason="new flow arrived sooner than expected",
+        )
+    elif timing_delta_counter[src_ip] > 0:
+        timing_delta_counter[src_ip] -= 1
+    return delta
+
+
 # ---------------------------------------------------------------------------
 # DYNAMIC ATTRIBUTE FUNCTIONS
 # ---------------------------------------------------------------------------
@@ -465,17 +512,19 @@ def get_dynamic_context(ip):
     base_context = host_attributes.get(ip, {}).get("context", "normal")
     if base_context == "abnormal":
         return "abnormal"
-    role = host_attributes.get(ip, {}).get("role", "")
-    if role in OFF_HOURS_EXEMPT_ROLES:
+    schedule = host_attributes.get(ip, {}).get("schedule", "always")
+    if schedule not in OFF_HOURS_RESTRICTED_SCHEDULES:
         return "normal"
-    current_hour = datetime.datetime.now().hour
+    current_hour, hour_source = get_current_hour()
     if current_hour < BUSINESS_HOURS_START or current_hour >= BUSINESS_HOURS_END:
         log_event(
             "OFF_HOURS_CONTEXT",
             level="warning",
             src=ip,
-            reason="non-exempt role active outside business hours",
+            reason="device schedule is restricted outside business hours",
             current_hour=current_hour,
+            hour_source=hour_source,
+            schedule=schedule,
         )
         return "off-hours"
     return "normal"
@@ -581,6 +630,12 @@ class ZeroTrustEngine:
             len(rate_counter[src_ip]) >= RATE_LIMIT_PACKETS // 2,
             10,
             "source is generating elevated packet volume",
+            reasons,
+        )
+        self._add_if(
+            timing_delta_counter[src_ip] >= TIMING_DELTA_RISK_THRESHOLD,
+            min(timing_delta_counter[src_ip] * 15, 30),
+            "source has repeated short inter-arrival times",
             reasons,
         )
 
@@ -758,6 +813,7 @@ def _handle_PacketIn(event):
 
     start_time = time.time()
     metrics["total_requests"] += 1
+    observe_timing_delta(src_ip, dst_ip)
 
     # ── ZERO TRUST STEP 1: AAA IDENTITY VERIFICATION ─────────────────────────
     # validate_session() handles both first-time authentication and
@@ -966,12 +1022,14 @@ def launch():
         "BUSINESS_HOURS",
         start="{:02d}:00".format(BUSINESS_HOURS_START),
         end="{:02d}:00".format(BUSINESS_HOURS_END),
-        exempt_roles="bms_controller,lighting_controller",
-        reason="controllers exempt; sensors and non-exempt roles restricted off-hours",
+        restricted_schedules="business_hours,maintenance_window",
+        forced_hour_path=FORCED_HOUR_PATH,
+        reason="off-hours context is evaluated from per-device schedule profiles",
     )
     log_event("AAA_READY", devices=len(aaa.device_registry))
     log_event(
         "ZT_READY",
         monitor_threshold=zero_trust.monitor_threshold,
         deny_threshold=zero_trust.deny_threshold,
+        timing_delta_min_ms=_latency_ms(TIMING_DELTA_MIN_SECONDS),
     )

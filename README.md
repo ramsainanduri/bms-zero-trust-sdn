@@ -23,7 +23,7 @@ The thesis uses the BACnet analysis as motivation: building-management attacks c
 | `controller.py` | POX OpenFlow controller implementing AAA, Zero Trust risk scoring, ABAC, rate limiting, quarantine, logging, and OpenFlow enforcement |
 | `mininet.sh` | Starts the five-host Mininet topology and connects it to POX |
 | `ping_test.mn` | Baseline test sequence T01-T12 |
-| `advanced_test.mn` | Advanced validation for spoofing, unknown identity, UDP/47808, flow-table inspection, and quarantine |
+| `advanced_test.mn` | Advanced validation for spoofing, unknown identity, UDP/47808, timing delta, off-hours context, flow-table inspection, and quarantine |
 | `Documentation.md` | Full experiment documentation and architecture explanation |
 | `BACnet_data_analysis.md` | Thesis-side summary explaining how the BACnet dataset motivated the architecture |
 | `BACnet_Architecture_Short_Summary.md` | Short thesis-facing summary |

@@ -95,6 +95,8 @@ The tests show that:
 | Denied cross-system traffic | Segmentation is enforced |
 | Denied sensor-to-sensor traffic | Lateral movement is restricted |
 | Repeated denied attempts | Suspicious behaviour is detected |
+| Short delta-t traffic | Rapid repeated flow attempts are logged as timing evidence |
+| Off-hours scheduled traffic | Devices with restricted schedules can be denied outside their expected operating window |
 | Quarantine event | The architecture can contain abnormal devices |
 | UDP `47808` validation | BACnet-representative traffic can be recognised |
 

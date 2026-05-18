@@ -305,7 +305,7 @@ The score is not random or machine-generated. It is a deterministic weighted sum
 | Source trust is `unknown` | `35` | Device identity is known by AAA, but its operational trust is not strong |
 | Source trust is dynamically `limited` | `45` | The device has been downgraded after repeated denied behaviour |
 | Source trust is `restricted` | `50` | The source is treated as high-risk from the start |
-| Source context is `off-hours` | `35` | Non-exempt sensors communicating outside the expected operating window are suspicious |
+| Source context is `off-hours` | `35` | A device with a restricted schedule is active outside its expected operating window |
 | Source context is `abnormal` | `60` | The source is already marked as unsafe or compromised |
 | Destination context is `abnormal` | `30` | The request targets a risky destination |
 | Destination trust is `restricted` | `35` | The request targets a restricted asset |
@@ -314,6 +314,7 @@ The score is not random or machine-generated. It is a deterministic weighted sum
 | Previous denied attempts from source | `10` per denial, maximum `30` | Repeated violations increase behavioural risk |
 | Previous denied destinations from source | `10` per destination, maximum `20` | Attempts against multiple destinations indicate scanning or misuse |
 | Elevated packet volume | `10` | Rapid repeated traffic increases risk before the hard rate limit is reached |
+| Repeated short inter-arrival time | `15` per observation, maximum `30` | A small delta-t between new flows can indicate scanning, polling abuse, or automation |
 
 Example: h4 has `trust="unknown"`, so it starts with `35` points. If h4 also attempts cross-system communication, the score becomes `55` (`35 + 20`), which is monitored. After previous denied attempts, additional points can push the same host above `70`, causing a Zero Trust deny before ABAC.
 
@@ -328,7 +329,7 @@ The controller applies the following policy rules.
 |---|---|---|
 | Unknown sources are denied | The controller should not allow devices without registered attributes | An unregistered IP is blocked |
 | Abnormal sources are denied | Abnormal context indicates suspicious or unsafe behaviour | h5 is blocked because it starts as abnormal |
-| Off-hours sensors are restricted | Sensor activity outside business hours may indicate unusual operation | h2 or h4 may be blocked outside 08:00-18:00 |
+| Off-hours scheduled devices are restricted | Activity outside the configured schedule may indicate unusual operation | Lighting field devices may be blocked outside 08:00-18:00 |
 | Source trust must be trusted | Unknown or restricted sources should not initiate communication | h4 is denied because its trust is `unknown` |
 | Restricted destinations are denied | Trusted devices should not communicate with restricted devices | h2 to h5 is denied |
 | Sensors can only communicate with controllers | Sensors should not communicate laterally with other sensors | h2 to h4 is denied |
@@ -345,23 +346,19 @@ The controller uses a business-hours context rule:
 Business hours: 08:00 to 18:00
 ```
 
-The off-hours restriction applies to sensors and unknown devices, not to controller roles. In the current implementation, the following roles are exempt:
-
-```text
-bms_controller
-lighting_controller
-```
+The off-hours rule is based on a per-device `schedule` attribute instead of a broad role rule.
 
 This means:
 
-| Device type/role | Off-hours behaviour |
+| Device/schedule | Off-hours behaviour |
 |---|---|
-| BMS controller | Exempt, remains `normal` |
-| Lighting controller | Exempt, remains `normal` |
-| Sensors | Can be marked `off-hours` outside 08:00-18:00 |
-| Unknown/external devices | Can be restricted or abnormal depending on attributes |
+| h1 BMS/HVAC controller, `always` | Remains `normal` |
+| h2 HVAC sensor, `always` | Remains `normal` because HVAC telemetry is treated as continuous operation |
+| h3 lighting controller, `business_hours` | Marked `off-hours` outside 08:00-18:00 |
+| h4 lighting sensor, `business_hours` | Marked `off-hours` outside 08:00-18:00 |
+| h5 external device, `maintenance_window` | Restricted and already abnormal in this testbed |
 
-The startup log states that controller roles are exempt and off-hours restrictions apply to sensors/non-exempt roles. This is why controller-to-controller or controller-to-sensor tests may still be allowed outside business hours while sensor-originated traffic can be restricted.
+For repeatable tests, the controller also checks `/tmp/bms_controller_hour`. If that file contains an hour such as `2` or `10`, the controller uses it instead of the system clock. This avoids changing the operating-system time during validation.
 
 ## 12. Behavioural Detection and Quarantine
 
@@ -427,9 +424,13 @@ The advanced tests are designed to show that the architecture does more than per
 | A02 | h2 changes to wrong MAC, then h2 -> h1 | Test AAA identity enforcement | `EVENT=AAA_AUTH_FAIL` due to MAC mismatch |
 | A03 | h2 changes to unregistered IP, then h2 -> h1 | Test unknown identity handling | `EVENT=AAA_AUTH_FAIL` because source IP is not registered |
 | A04 | h2 sends UDP to h1 on port 47808 | Test BACnet-representative traffic | ALLOW if AAA, Zero Trust, and ABAC pass |
-| A05 | h4 repeatedly triggers denied traffic | Test behavioural detection | Suspicious host detection and quarantine |
-| A06 | h4 communicates after quarantine | Test quarantine persistence | Blocked quarantined host |
-| A07 | show recent controller evidence from Mininet shell | Collect readable test markers and event lines | Compact log section for screenshots/results |
+| A05 | h2 sends several rapid h2 -> h1 flows | Test delta-t behaviour | `EVENT=TIMING_DELTA` and possible added risk |
+| A06 | forced hour `10`, h3 -> h4 UDP/47808 | Test scheduled device during business hours | ALLOW |
+| A07 | forced hour `2`, h3 -> h4 UDP/47808 | Test scheduled device outside business hours | `EVENT=OFF_HOURS_CONTEXT` and ABAC deny |
+| A08 | forced hour `2`, h2 -> h1 | Confirm continuous HVAC device behaviour | ALLOW |
+| A09 | h4 repeatedly triggers denied traffic | Test behavioural detection | Suspicious host detection and quarantine |
+| A10 | h4 communicates after quarantine | Test quarantine persistence | Blocked quarantined host |
+| A11 | show recent controller evidence from Mininet shell | Collect readable event lines | Compact log section for screenshots/results |
 
 The advanced test script intentionally changes h2's MAC and IP address, then restores them. It is best run from a fresh Mininet and controller session so previous quarantine or rate-limit state does not affect the result.
 
@@ -645,6 +646,8 @@ The following log messages are expected during a successful experiment.
 | `EVENT=AAA_AUTH_OK` | A device successfully authenticated |
 | `EVENT=AAA_AUTH_FAIL` | Authentication or registry validation failed |
 | `EVENT=ZT_ASSESS` | Runtime risk score calculated before ABAC |
+| `EVENT=TIMING_DELTA` | New flow from a source arrived sooner than the configured delta-t threshold |
+| `EVENT=OFF_HOURS_CONTEXT` | A scheduled device was active outside business hours |
 | `EVENT=ZT_DENY` | High-risk flow blocked before ABAC |
 | `EVENT=ALLOW` | Traffic passed AAA, Zero Trust, and ABAC checks |
 | `EVENT=ABAC_DENY` | Traffic passed AAA and Zero Trust but failed ABAC policy |
@@ -657,8 +660,6 @@ The following log messages are expected during a successful experiment.
 | `EVENT=FINAL_SUMMARY` | Summary printed when the controller exits cleanly |
 
 The final metrics include total requests, allowed requests, denied requests, authentication failures, Zero Trust denies, high-risk Zero Trust observations, rate-limit drops, detections, quarantines, and latency measurements.
-
-For readability, each known baseline flow gets a test marker in the controller evidence stream. When you run `ping_test.mn`, the Mininet terminal also prints the same test marker. When you run a manual command such as `h2 ping -c 2 10.0.0.1`, the controller infers the matching marker from the source and destination IPs.
 
 ```text
 ================================================================================
