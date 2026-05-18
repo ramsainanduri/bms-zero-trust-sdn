@@ -16,6 +16,12 @@ data_analysis/
 *.log
 *.pid
 bms_controller_events.txt
+test_evidence/
+screenshots/
+evidence/
+test_evidence/
+screenshots/
+evidence/
 
 # Build outputs and local helper binaries.
 *.o
