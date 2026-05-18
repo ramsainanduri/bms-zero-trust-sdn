@@ -27,7 +27,6 @@ The thesis uses the BACnet analysis as motivation: building-management attacks c
 | `Documentation.md` | Full experiment documentation and architecture explanation |
 | `BACnet_data_analysis.md` | Thesis-side summary explaining how the BACnet dataset motivated the architecture |
 | `BACnet_Architecture_Short_Summary.md` | Short thesis-facing summary |
-| `QA.md` | Thesis defense question-and-answer preparation |
 | `zero_trust_sdn_flowchart.svg` | Architecture decision-flow diagram |
 | `zero_trust_scenario_flowchart.svg` | Scenario/test-flow diagram |
 
@@ -96,11 +95,11 @@ Controller evidence is written to:
 /tmp/bms_controller_events.txt
 ```
 
-## Thesis Citation
+## Citation
 
-Use this repository in the thesis text as the implementation artifact:
+For readers who want to cite this code artifact:
 
 ```text
-Sainanduri, R. BMS Zero Trust SDN.
+Nanduri, Ram. BMS Zero Trust SDN.
 GitHub: https://github.com/ramsainanduri/bms-zero-trust-sdn
 ```
